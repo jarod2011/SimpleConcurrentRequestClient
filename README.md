@@ -1,0 +1,2 @@
+# SimpleConcurrentRequestClient
+一个基于guzzlehttp实现的并发请求的客户端，通过此终端可以完成并发去请求多个接口并统一拿到返回结果
