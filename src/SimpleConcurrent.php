@@ -12,6 +12,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Pool;
 use Psr\Http\Message\ResponseInterface;
 use function GuzzleHttp\json_decode;
+use GuzzleHttp\Cookie\CookieJarInterface;
 
 /**
  * simple request interface
@@ -334,16 +335,63 @@ class RequestClient
     
     private $useJsonResponse = true;
     
+    public function __construct()
+    {
+        $this->initStatus();
+    }
+    
     private function _getClient(): ClientInterface
     {
         if (! $this->client instanceof ClientInterface) $this->client = new Client($this->clientConfig);
         return $this->client;
     }
     
-    public function initStatus()
+    public function addClientHeader(string $headerName, $headerValue): self
+    {
+        $this->clientConfig['headers'][$headerName] = $headerValue;
+        return $this;
+    }
+    
+    public function setClientConfigOfTimeout($seconds = 10): self
+    {
+        $this->clientConfig['timeout'] = max(1, $seconds);
+        return $this;
+    }
+    
+    public function setEnableAllowRedirect($enable = false): self
+    {
+        $this->clientConfig['allow_redirects'] = boolval($enable);
+        return $this;
+    }
+    
+    public function enableCookie(): self
+    {
+        $this->clientConfig['cookies'] = true;
+        return $this;
+    }
+    
+    public function disableCookie(): self
+    {
+        $this->clientConfig['cookies'] = false;
+        return $this;
+    }
+    
+    public function setCookieInstance(CookieJarInterface $cookie)
+    {
+        $this->clientConfig['cookies'] = $cookie;
+        return $this;
+    }
+    
+    public function getCookieInstance()
+    {
+        return $this->_getClient()->getConfig('cookies');
+    }
+    
+    public function initStatus():self
     {
         $this->requestList = [];
         $this->isPromise = false;
+        return $this;
     }
     
     public function addRequest(SimpleRequest & $request): self
@@ -387,6 +435,18 @@ class RequestClient
         $response = new SimpleResponse();
         $response->setFail($error);
         $this->requestList[$index]->setResponse($response);
+    }
+    
+    public function responseIsJson(): self
+    {
+        $this->useJsonResponse = true;
+        return $this;
+    }
+    
+    public function responseIsNotJson(): self
+    {
+        $this->useJsonResponse = false;
+        return $this;
     }
     
     /**
