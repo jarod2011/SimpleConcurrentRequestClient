@@ -1,7 +1,8 @@
 <?php
 /**
  * @author Jarod2011
- * @link https://github.com/jarod2011/SimpleConcurrentRequestClient
+ * @link github: https://github.com/jarod2011/SimpleConcurrentRequestClient
+ * @link packagist: https://packagist.org/packages/jarod2011/simple-concurrent-request-client
  */
 namespace SimpleConcurrent;
 
@@ -143,6 +144,18 @@ class SimpleRequest implements SimpleRequestInterface
      */
     private $response;
     
+    /**
+     * whether the response is json format.
+     * @var bool
+     */
+    private $responseIsJson = false;
+    
+    /**
+     * whether the conversion json format is add to callback list.
+     * @var bool
+     */
+    private $isJsonCallbackPassed = false;
+    
     public function __construct()
     {
         $this->callbackOfSuccess = [];
@@ -160,6 +173,26 @@ class SimpleRequest implements SimpleRequestInterface
     }
     
     /**
+     * when response is json format use this method and client will auto use json_decode conversion result
+     * @return self
+     */
+    public function responseIsJson(): self
+    {
+        $this->responseIsJson = true;
+        return $this;
+    }
+    
+    /**
+     * when response is not json format use this method close auto conversion json
+     * @return self
+     */
+    public function responseIsNotJson(): self
+    {
+        $this->responseIsJson = false;
+        return $this;
+    }
+    
+    /**
      * {@inheritDoc}
      * @see \SimpleConcurrent\SimpleRequestInterface::setRequest()
      */
@@ -169,12 +202,22 @@ class SimpleRequest implements SimpleRequestInterface
         return $this;
     }
     
+    /**
+     * pass a closure to successed callback list. 
+     * @param \Closure $callback
+     * @return self
+     */
     public function addSuccessCallback(\Closure $callback): self
     {
         $this->callbackOfSuccess[] = $callback;
         return $this;
     }
     
+    /**
+     * pass a closure to failed callback list. 
+     * @param \Closure $callback
+     * @return self
+     */
     public function addFailCallback(\Closure $callback): self
     {
         $this->callbackOfFail[] = $callback;
@@ -197,6 +240,12 @@ class SimpleRequest implements SimpleRequestInterface
     public function getPromise(): PromiseInterface
     {
         if (! $this->promise) throw new RequestBuildExpection('please give a request.');
+        if ($this->responseIsJson && ! $this->isJsonCallbackPassed) {
+            array_unshift($this->callbackOfSuccess, function ($res) {
+                return json_decode($res, true);
+            });
+            $this->isJsonCallbackPassed = true;
+        }
         return $this->promise;
     }
 
@@ -299,6 +348,9 @@ class SimpleResponse implements SimpleResponseInterface
     
 }
 
+/**
+ * simple request client
+ */
 class RequestClient
 {
 
@@ -333,84 +385,133 @@ class RequestClient
      */
     private $configOfConcurrency = 10;
     
-    private $useJsonResponse = true;
-    
     public function __construct()
     {
         $this->initStatus();
     }
     
+    /**
+     * get a client implements \GuzzleHttp\ClientInterface
+     * @return ClientInterface
+     */
     private function _getClient(): ClientInterface
     {
         if (! $this->client instanceof ClientInterface) $this->client = new Client($this->clientConfig);
         return $this->client;
     }
     
+    /**
+     * add a client request header
+     * @param string $headerName
+     * @param mixed $headerValue
+     * @return self
+     */
     public function addClientHeader(string $headerName, $headerValue): self
     {
         $this->clientConfig['headers'][$headerName] = $headerValue;
         return $this;
     }
     
+    /**
+     * set the request timeout seconds
+     * default value is 10 seconds
+     * @param number $seconds
+     * @return self
+     */
     public function setClientConfigOfTimeout($seconds = 10): self
     {
         $this->clientConfig['timeout'] = max(1, $seconds);
         return $this;
     }
     
-    public function setEnableAllowRedirect($enable = false): self
+    /**
+     * open or close the client allow redirect or not allow
+     * default value is not allow
+     * @param string $enable
+     * @return self
+     */
+    public function setAllowRedirect($enable = false): self
     {
         $this->clientConfig['allow_redirects'] = boolval($enable);
         return $this;
     }
     
+    /**
+     * open client cookie
+     * @return self
+     */
     public function enableCookie(): self
     {
         $this->clientConfig['cookies'] = true;
         return $this;
     }
     
+    /**
+     * close client cookie
+     * @return self
+     */
     public function disableCookie(): self
     {
         $this->clientConfig['cookies'] = false;
         return $this;
     }
     
+    /**
+     * pass a cookie instance to client
+     * the cookie instance must implements \GuzzleHttp\Cookie\CookieJarInterface
+     * @param CookieJarInterface $cookie
+     * @return RequestClient
+     */
     public function setCookieInstance(CookieJarInterface $cookie)
     {
         $this->clientConfig['cookies'] = $cookie;
         return $this;
     }
     
+    /**
+     * get client cookie instance
+     * if client use cookie will return a cookie implements \GuzzleHttp\Cookie\CookieJarInterface
+     * if client not use cookie will return null
+     * @return mixed
+     */
     public function getCookieInstance()
     {
         return $this->_getClient()->getConfig('cookies');
     }
     
+    /**
+     * clear request list
+     * @return self
+     */
     public function initStatus():self
     {
         $this->requestList = [];
-        $this->isPromise = false;
         return $this;
     }
     
+    /**
+     * pass new request to request list
+     * @param SimpleRequest $request
+     * @return self
+     */
     public function addRequest(SimpleRequest & $request): self
     {
         $this->requestList[] = $request;
         return $this;
     }
     
+    /**
+     * when request successed this method will be called
+     * @param mixed $response
+     * @param int $index
+     * @throws \Exception
+     */
     private function _responseSuccessHandle($response, $index)
     {
         try {
             if (! $response instanceof ResponseInterface) throw new UnknowResponseExpection($response);
             $result = $response->getBody()->getContents();
             $cbk = $this->requestList[$index]->getSuccessCallbackList();
-            if ($this->useJsonResponse) {
-                array_unshift($cbk, function ($res) {
-                    return json_decode($res, true);
-                });
-            }
             if (! empty($cbk)) {
                 $result = array_reduce($cbk, function ($prev, $cb) {
                     return $cb($prev);
@@ -424,6 +525,11 @@ class RequestClient
         }
     }
     
+    /**
+     * when request failed this method will be called
+     * @param mixed $error
+     * @param int $index
+     */
     private function _responseFailHandle($error, $index)
     {
         $cbk = $this->requestList[$index]->getFailCallbackList();
@@ -435,18 +541,6 @@ class RequestClient
         $response = new SimpleResponse();
         $response->setFail($error);
         $this->requestList[$index]->setResponse($response);
-    }
-    
-    public function responseIsJson(): self
-    {
-        $this->useJsonResponse = true;
-        return $this;
-    }
-    
-    public function responseIsNotJson(): self
-    {
-        $this->useJsonResponse = false;
-        return $this;
     }
     
     /**
@@ -490,6 +584,9 @@ class RequestClient
     }
 }
 
+/**
+ * when build promise faied this exception will be throw
+ */
 class RequestBuildExpection extends \Exception
 {
     public function __construct($message)
@@ -498,6 +595,9 @@ class RequestBuildExpection extends \Exception
     }
 }
 
+/**
+ * when response can't explain, this exception will be throw
+ */
 class UnknowResponseExpection extends \Exception
 {
     public function __construct($response)
@@ -514,6 +614,9 @@ class UnknowResponseExpection extends \Exception
     }
 }
 
+/**
+ * when response read stream failed this exception will be throw
+ */
 class ResponseReadExpection extends \Exception
 {
     public function __construct()
