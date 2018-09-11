@@ -2,7 +2,12 @@ SimpleConcurrentRequestClient
 =================
 [![GitHub license](https://img.shields.io/github/license/jarod2011/SimpleConcurrentRequestClient.svg)](https://github.com/jarod2011/SimpleConcurrentRequestClient/blob/master/LICENSE)
 
-SimpleConcurrentRequestClient是一个针对[guzzle](https://github.com/guzzle/guzzle/)做的简单封装，可以很方便简单的实现多个接口调用请求并发执行并方便的获取每个调用结果。
+[SimpleConcurrentRequestClient](https://packagist.org/packages/jarod2011/simple-concurrent-request-client)是一个针对[guzzle](https://github.com/guzzle/guzzle/)做的简单封装，可以很方便简单的实现多个接口调用请求并发执行并方便的获取每个调用结果。
+
+#### 安装
+```bash
+composer require jarod2011/simple-concurrent-request-client
+```
 
 #### 对于以下应用场景，比较适合
 
