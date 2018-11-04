@@ -401,6 +401,17 @@ class RequestClient
     }
     
     /**
+     * set the request concurrency count
+     * @param int $concurrency
+     * @return self
+     */
+    public function setRequestConcurrency(int $concurrency): self
+    {
+        $this->configOfConcurrency = max(1, $concurrency);
+        return $this;
+    }
+    
+    /**
      * add a client request header
      * @param string $headerName
      * @param mixed $headerValue
