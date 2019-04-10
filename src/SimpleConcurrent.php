@@ -166,11 +166,13 @@ class SimpleRequest implements SimpleRequestInterface
     
     
     /**
+     * request orign
      * @var RequestInterface
      */
     private $requestOrign;
     
     /**
+     * request options
      * @var array
      */
     private $requestOption = [];
