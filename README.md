@@ -9,8 +9,10 @@ SimpleConcurrentRequestClient
 composer require jarod2011/simple-concurrent-request-client
 ```
 
-#### 版本
-当前最新v1.1很稳定，请升级到最新版本，增加了针对https是否校验的方法，以及一个自定义client配置的方法
+#### 版本记录
+版本v1.1.1 临时修复一个bug，为当前最新版本，建议更新到此版本，此版本修复了在`RequestClient`中配置的`header`、`user-agent`等参数不能在并发请求中生效，修复后，可以通过`RequestClient`中统一配置`header`中的参数了，并增加了一个`setPromise`方法，可以直接传入一个`Promise`，而若使用了此方法则setRequest方法提供的请求将无效
+
+版本v1.1 增加了针对https是否校验的方法，以及一个自定义client配置的方法
 
 #### 对于以下应用场景，比较适合
 
