@@ -9,6 +9,9 @@ SimpleConcurrentRequestClient
 composer require jarod2011/simple-concurrent-request-client
 ```
 
+#### 版本
+当前最新v1.1很稳定，请升级到最新版本，增加了针对https是否校验的方法，以及一个自定义client配置的方法
+
 #### 对于以下应用场景，比较适合
 
 * 很多http接口需要调用，并且每个接口的调用对其他接口调用结果没有依赖性
