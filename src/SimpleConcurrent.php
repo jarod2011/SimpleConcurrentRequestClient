@@ -65,6 +65,14 @@ interface SimpleRequestInterface
      * @param array $options
      */
     public function setRequest(RequestInterface $request, array $options = []);
+    
+    /**
+     * set a promise implements \GuzzleHttp\Promise\PromiseInterface.
+     * this method is not necessary, you can use setRequest to set a request
+     * this method set promise will be priority to use
+     * @param PromiseInterface $promise
+     */
+    public function setPromise(PromiseInterface $promise);
 }
 
 /**
@@ -156,6 +164,17 @@ class SimpleRequest implements SimpleRequestInterface
      */
     private $isJsonCallbackPassed = false;
     
+    
+    /**
+     * @var RequestInterface
+     */
+    private $requestOrign;
+    
+    /**
+     * @var array
+     */
+    private $requestOption = [];
+    
     public function __construct()
     {
         $this->callbackOfSuccess = [];
@@ -198,7 +217,8 @@ class SimpleRequest implements SimpleRequestInterface
      */
     public function setRequest(RequestInterface $request, array $options = []): self
     {
-        $this->promise = $this->_getClient()->sendAsync($request, $options);
+        $this->requestOrign = $request;
+        $this->requestOption = $options;
         return $this;
     }
     
@@ -239,7 +259,10 @@ class SimpleRequest implements SimpleRequestInterface
      */
     public function getPromise(): PromiseInterface
     {
-        if (! $this->promise) throw new RequestBuildExpection('please give a request.');
+        if (! $this->requestOrign && ! $this->promise) throw new RequestBuildExpection('please give a request.');
+        if (! $this->promise) {
+            $this->promise = $this->_getClient()->sendAsync($this->requestOrign, $this->requestOption);
+        }
         if ($this->responseIsJson && ! $this->isJsonCallbackPassed) {
             array_unshift($this->callbackOfSuccess, function ($res) {
                 return json_decode($res, true);
@@ -283,6 +306,17 @@ class SimpleRequest implements SimpleRequestInterface
     public function setResponse(SimpleResponseInterface $response): self
     {
         $this->response = $response;
+        return $this;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * @param PromiseInterface $promise
+     * @return self
+     */
+    public function setPromise(PromiseInterface $promise): self
+    {
+        $this->promise = $promise;
         return $this;
     }
 
@@ -562,7 +596,7 @@ class RequestClient
     {
         foreach ($this->requestList as $request) {
             yield function () use ($request) {
-                return $request->getPromise();
+                return $request->setClient($this->_getClient())->getPromise();
             };
         }
     }
