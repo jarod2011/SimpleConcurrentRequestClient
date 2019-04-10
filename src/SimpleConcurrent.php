@@ -368,6 +368,7 @@ class RequestClient
         'timeout' => 10,
         'allow_redirects' => false,
         'cookies' => false,
+        'verify' => true,
         'headers' => [
             'user-agent' => 'Simple Concurrent Client v0.1'
         ]
@@ -591,6 +592,26 @@ class RequestClient
     {
         $pool = $this->_getRequestPool();
         $pool->promise()->wait();
+        return $this;
+    }
+
+    /**
+     * open or close the client verify https or not allow
+     * @return self
+     */
+    public function setVerifyHttps(bool $allow): self
+    {
+        $this->clientConfig['verify'] = $allow;
+        return $this;
+    }
+
+    /**
+     * add or modify client config by custom
+     * @return self
+     */
+    public function customSetting(string $settingKey, $settingValue): self
+    {
+        $this->clientConfig[$settingKey] = $settingValue;
         return $this;
     }
 }
