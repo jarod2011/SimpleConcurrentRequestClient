@@ -10,13 +10,13 @@ use GuzzleHttp\Exception\ClientException;
 
 /* 创建一个请求并使用自动的json格式转化 */
 $req1 = new SimpleRequest();
-$req1->setRequest(new Request('GET', 'http://developerhome.net/json/test.json'))->responseIsJson();
+$req1->setRequest(new Request('GET', 'https://photo.home.163.com/api/designer/pc/home/index/word'))->responseIsJson();
 /* 创建一个请求但不使用自动的json格式转化 */
 $req2 = new SimpleRequest();
-$req2->setRequest(new Request('GET', 'http://developerhome.net/json/test1.json'));
+$req2->setRequest(new Request('GET', 'https://photo.home.163.com/api/designer/pc/home/index/word'));
 /* 创建一个不存在的URL请求 */
 $reqError = new SimpleRequest();
-$reqError->setRequest(new Request('GET', 'http://developerhome.net/json/no_exists_file'));
+$reqError->setRequest(new Request('GET', 'https://www.baidu.com/notexits'));
 
 /* 初始化客户端 */
 $client = new RequestClient();

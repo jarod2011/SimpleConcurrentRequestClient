@@ -3,7 +3,7 @@
   "description" : "一个基于guzzlehttp实现的并发请求的客户端，通过此终端可以完成并发去请求多个接口并统一拿到返回结果",
   "version" : "1.1.1",
   "require" : {
-    "guzzlehttp/guzzle" : "~6.3.2"
+    "guzzlehttp/guzzle" : "~7.4.3"
   },
   "license" : "MIT",
   "autoload" : {
